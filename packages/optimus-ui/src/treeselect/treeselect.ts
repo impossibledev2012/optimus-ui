@@ -44,6 +44,7 @@ import {
     TreeSelectPassThrough,
     TreeSelectValueTemplateContext
 } from '@openng/optimus-ui/types/treeselect';
+import { take } from 'rxjs';
 import { TreeSelectStyle } from './style/treeselectstyle';
 
 export const TREESELECT_VALUE_ACCESSOR: any = {
@@ -747,6 +748,21 @@ export class TreeSelect extends BaseEditableHolder<TreeSelectPassThrough> {
             if (focusableElements && focusableElements.length > 0) {
                 focusableElements[0].focus();
             }
+        }
+        const panelElement = this.panelEl?.nativeElement;
+        if (this.virtualScroll && panelElement) {
+            let lastHeight = panelElement.offsetHeight;
+            const virtualScrollResizeObserver = new ResizeObserver((entries) => {
+                const newHeight = entries[0].contentRect.height;
+                if (newHeight !== lastHeight) {
+                    lastHeight = newHeight;
+                    this.overlayViewChild?.alignOverlay();
+                }
+            });
+            virtualScrollResizeObserver.observe(panelElement);
+
+            // clean up when overlay closes, not after first callback
+            this.overlayViewChild?.onHide.pipe(take(1)).subscribe(() => virtualScrollResizeObserver.disconnect());
         }
     }
 
